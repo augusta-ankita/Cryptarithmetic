@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cryptarithmetic AIML Game</title>
+  <style>
+    body {
+      background: linear-gradient(120deg, #f6d365, #fda085);
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 0;
+      padding: 0;
+    }
+    h1 {
+      margin-top: 20px;
+      color: #333;
+    }
+    .game-container {
+      background: #fff;
+      padding: 20px;
+      border-radius: 16px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+      text-align: center;
+      margin-top: 20px;
+      width: 90%;
+      max-width: 500px;
+    }
+    .stats {
+      display: flex;
+      justify-content: space-around;
+      margin-bottom: 20px;
+    }
+    .problem {
+      font-size: 22px;
+      font-weight: bold;
+      margin: 20px 0;
+    }
+    .input-area {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 10px;
+    }
+    .keypad button {
+      padding: 10px 15px;
+      margin: 5px;
+      font-size: 18px;
+      background-color: #333;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .keypad button:hover {
+      background: #555;
+    }
+    #answer {
+      font-size: 20px;
+      margin: 10px;
+    }
+    .submit-btn, .restart-btn {
+      margin-top: 10px;
+      padding: 10px 20px;
+      background-color: #007BFF;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .message {
+      margin-top: 15px;
+      font-size: 18px;
+      font-weight: bold;
+      color: green;
+    }
+  </style>
+</head>
+<body>
+  <h1>Cryptarithmetic AIML Puzzle</h1>
+  <div class="game-container">
+    <div class="stats">
+      <div>Level: <span id="level">1</span></div>
+      <div>Round: <span id="round">1</span></div>
+      <div>Score: <span id="score">0</span></div>
+      <div class="timer">Time: <span id="timer">30</span>s</div>
+    </div>
+
+    <div class="problem" id="problem"></div>
+
+    <input type="text" id="answer" placeholder="Enter digits for each letter in order" readonly />
+
+    <div class="keypad">
+      <div class="input-area">
+        <button onclick="addDigit(0)">0</button>
+        <button onclick="addDigit(1)">1</button>
+        <button onclick="addDigit(2)">2</button>
+        <button onclick="addDigit(3)">3</button>
+        <button onclick="addDigit(4)">4</button>
+        <button onclick="addDigit(5)">5</button>
+        <button onclick="addDigit(6)">6</button>
+        <button onclick="addDigit(7)">7</button>
+        <button onclick="addDigit(8)">8</button>
+        <button onclick="addDigit(9)">9</button>
+        <button onclick="deleteDigit()">Del</button>
+        <button onclick="clearAnswer()">Clear</button>
+      </div>
+    </div>
+    <button class="submit-btn" onclick="submitAnswer()">Submit</button>
+    <div class="message" id="resultMessage"></div>
+    <button class="restart-btn" onclick="restartGame()">New Game</button>
+  </div>
+
+  <script>
+    const problems = [
+      {
+        equation: "SEND + MORE = MONEY",
+        letters: "SENDMOREY",
+        answers: [
+          { S: 9, E: 5, N: 6, D: 7, M: 1, O: 0, R: 8, Y: 2 },
+          { S: 9, E: 6, N: 5, D: 7, M: 1, O: 0, R: 8, Y: 2 }
+        ]
+      },
+      {
+        equation: "BASE + BALL = GAMES",
+        letters: "BASELGMS",
+        answers: [
+          { B: 7, A: 4, S: 8, E: 3, L: 5, G: 1, M: 9 }
+        ]
+      },
+      {
+        equation: "THIS + IS = HARD",
+        letters: "THISARD",
+        answers: [
+          { T: 1, H: 9, I: 7, S: 2, A: 4, R: 3, D: 5 },
+          { T: 1, H: 9, I: 7, S: 3, A: 4, R: 2, D: 5 }
+        ]
+      }
+    ];
+
+    let level = 1;
+    let round = 1;
+    let score = 0;
+    let timer;
+    let timeLeft = 30;
+    let currentProblem;
+
+    function startTimer() {
+      clearInterval(timer);
+      timeLeft = 300;
+      document.getElementById("timer").innerText = timeLeft;
+      timer = setInterval(() => {
+        timeLeft--;
+        document.getElementById("timer").innerText = timeLeft;
+        if (timeLeft === 0) {
+          clearInterval(timer);
+          alert("⏰ Time's up! Game Over.");
+          gameOver();
+        }
+      }, 1000);
+    }
+
+    function addDigit(digit) {
+      document.getElementById("answer").value += digit;
+    }
+
+    function deleteDigit() {
+      const current = document.getElementById("answer").value;
+      document.getElementById("answer").value = current.slice(0, -1);
+    }
+
+    function clearAnswer() {
+      document.getElementById("answer").value = "";
+    }
+
+    function showMessage(message, success) {
+      const msgEl = document.getElementById("resultMessage");
+      msgEl.style.color = success ? "green" : "red";
+      msgEl.textContent = message;
+    }
+
+    function submitAnswer() {
+      const userInput = document.getElementById("answer").value;
+      const letterOrder = currentProblem.letters;
+      if (userInput.length !== letterOrder.length) {
+        alert("Please enter " + letterOrder.length + " digits for the letters: " + letterOrder);
+        return;
+      }
+
+      const userMapping = {};
+      for (let i = 0; i < letterOrder.length; i++) {
+        userMapping[letterOrder[i]] = parseInt(userInput[i]);
+      }
+
+      let isCorrect = currentProblem.answers.some(answerMap => {
+        return letterOrder.split('').every(letter => userMapping[letter] === answerMap[letter]);
+      });
+
+      if (isCorrect) {
+        showMessage("🎉 Congratulations! Correct Answer.", true);
+        score += 10;
+        level++;
+        nextRound();
+      } else {
+        alert("❌ Incorrect answer! Game Over.");
+        gameOver();
+      }
+    }
+
+    function nextRound() {
+      round++;
+      document.getElementById("level").innerText = level;
+      document.getElementById("round").innerText = round;
+      document.getElementById("score").innerText = score;
+      generateProblem();
+    }
+
+    function generateProblem() {
+      currentProblem = problems[Math.floor(Math.random() * problems.length)];
+      const letterHint = ` [${currentProblem.letters}]`;
+      document.getElementById("problem").innerText = currentProblem.equation + letterHint;
+      document.getElementById("answer").value = "";
+      document.getElementById("resultMessage").textContent = "";
+      startTimer();
+    }
+
+    function gameOver() {
+      clearInterval(timer);
+      level = 1;
+      round = 1;
+      score = 0;
+      document.getElementById("level").innerText = level;
+      document.getElementById("round").innerText = round;
+      document.getElementById("score").innerText = score;
+      generateProblem();
+    }
+
+    function restartGame() {
+      gameOver();
+    }
+
+    generateProblem();
+  </script>
+</body>
+</html>
